@@ -1,0 +1,912 @@
+// index.html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chrome AI Browser</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+        
+        body {
+            overflow: hidden;
+        }
+        
+        .browser {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            background-color: #f1f3f4;
+        }
+        
+        .browser-header {
+            background-color: #ffffff;
+            padding: 8px 16px;
+            border-bottom: 1px solid #dadce0;
+            display: flex;
+            align-items: center;
+        }
+        
+        .browser-controls {
+            display: flex;
+            gap: 12px;
+            margin-right: 16px;
+        }
+        
+        .control-button {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            border: none;
+            cursor: pointer;
+        }
+        
+        .close-button {
+            background-color: #ff5f56;
+        }
+        
+        .minimize-button {
+            background-color: #ffbd2e;
+        }
+        
+        .maximize-button {
+            background-color: #27c93f;
+        }
+        
+        .tabs-container {
+            display: flex;
+            align-items: center;
+            flex: 1;
+            overflow-x: auto;
+            white-space: nowrap;
+            margin-right: 16px;
+        }
+        
+        .tab {
+            background-color: #f1f3f4;
+            padding: 8px 16px;
+            border-radius: 8px 8px 0 0;
+            margin-right: 4px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            height: 36px;
+            min-width: 180px;
+            max-width: 240px;
+            position: relative;
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+        }
+        
+        .tab.active {
+            background-color: #ffffff;
+            border: 1px solid #dadce0;
+            border-bottom: none;
+        }
+        
+        .tab-icon {
+            width: 16px;
+            height: 16px;
+        }
+        
+        .tab-title {
+            flex: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            font-size: 12px;
+        }
+        
+        .close-tab {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 16px;
+            font-size: 10px;
+            cursor: pointer;
+        }
+        
+        .close-tab:hover {
+            background-color: #dadce0;
+        }
+        
+        .new-tab-button {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            border: none;
+            background-color: transparent;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+        
+        .new-tab-button:hover {
+            background-color: #dadce0;
+        }
+        
+        .address-bar {
+            background-color: #ffffff;
+            padding: 8px 16px;
+            display: flex;
+            align-items: center;
+            border-bottom: 1px solid #dadce0;
+        }
+        
+        .navigation-buttons {
+            display: flex;
+            gap: 16px;
+            margin-right: 16px;
+        }
+        
+        .nav-button {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            border: none;
+            background-color: transparent;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: #5f6368;
+        }
+        
+        .nav-button:hover {
+            background-color: #f1f3f4;
+        }
+        
+        .nav-button.disabled {
+            color: #dadce0;
+            cursor: not-allowed;
+        }
+        
+        .url-container {
+            flex: 1;
+            height: 36px;
+            position: relative;
+            display: flex;
+            align-items: center;
+            background-color: #f1f3f4;
+            border-radius: 18px;
+            padding: 0 16px;
+        }
+        
+        .url-icon {
+            margin-right: 8px;
+            color: #5f6368;
+        }
+        
+        .url-input {
+            flex: 1;
+            height: 100%;
+            border: none;
+            background-color: transparent;
+            outline: none;
+            font-size: 14px;
+        }
+        
+        .browser-actions {
+            display: flex;
+            align-items: center;
+            margin-left: 16px;
+            gap: 8px;
+        }
+        
+        .action-button {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            border: none;
+            background-color: transparent;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: #5f6368;
+        }
+        
+        .action-button:hover {
+            background-color: #f1f3f4;
+        }
+        
+        .browser-content {
+            flex: 1;
+            position: relative;
+            background-color: #ffffff;
+        }
+        
+        .content-frame {
+            width: 100%;
+            height: 100%;
+            border: none;
+            display: none;
+        }
+        
+        .content-frame.active {
+            display: block;
+        }
+        
+        /* AI Floatbox Styles */
+        
+        .ai-toggle-button {
+            position: fixed;
+            top: 16px;
+            right: 16px;
+            width: 32px;
+            height: 32px;
+            background-color: #000;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 1000;
+        }
+        
+        .ai-floatbox {
+            position: fixed;
+            top: 60px;
+            right: 16px;
+            width: 360px;
+            height: 480px;
+            background-color: rgba(30, 30, 30, 0.75);
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            z-index: 999;
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(8px);
+            opacity: 0;
+            transform: translateY(-20px);
+            pointer-events: none;
+            transition: opacity 0.3s ease, transform 0.3s ease;
+            overflow: hidden;
+        }
+        
+        .ai-floatbox.active {
+            opacity: 1;
+            transform: translateY(0);
+            pointer-events: all;
+        }
+        
+        .ai-floatbox-header {
+            padding: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            color: #fff;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .ai-floatbox-title {
+            font-size: 16px;
+            font-weight: bold;
+        }
+        
+        .ai-floatbox-content {
+            flex: 1;
+            padding: 16px;
+            overflow-y: auto;
+            color: #fff;
+        }
+        
+        .ai-floatbox-footer {
+            padding: 16px;
+            display: flex;
+            align-items: center;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .ai-input-container {
+            flex: 1;
+            position: relative;
+            display: flex;
+            align-items: center;
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 18px;
+            padding: 0 16px;
+            height: 36px;
+        }
+        
+        .ai-input {
+            flex: 1;
+            height: 100%;
+            border: none;
+            background-color: transparent;
+            outline: none;
+            font-size: 14px;
+            color: #fff;
+        }
+        
+        .ai-send-button {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            border: none;
+            background-color: transparent;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: #fff;
+            margin-left: 8px;
+        }
+        
+        .ai-send-button:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+        
+        .ai-tools {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 16px;
+        }
+        
+        .ai-tool {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            border: none;
+            border-radius: 16px;
+            padding: 8px 12px;
+            font-size: 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .ai-tool:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+        
+        .screenshot-preview {
+            width: 100%;
+            margin-top: 16px;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .screenshot-preview img {
+            width: 100%;
+            display: block;
+        }
+        
+        .ai-message {
+            margin-bottom: 16px;
+            padding: 12px;
+            border-radius: 8px;
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+        
+        .ai-editing-tools {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 16px;
+        }
+        
+        .editing-tool {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            border: none;
+            border-radius: 16px;
+            padding: 8px 12px;
+            font-size: 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .editing-tool:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+        
+        .ai-responses {
+            margin-top: 16px;
+        }
+        
+        .ai-response-item {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+        
+        .ai-response-icon {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background-color: rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+        }
+        
+        .ai-response-text {
+            flex: 1;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="browser">
+        <div class="browser-header">
+            <div class="browser-controls">
+                <button class="control-button close-button"></button>
+                <button class="control-button minimize-button"></button>
+                <button class="control-button maximize-button"></button>
+            </div>
+            <div class="tabs-container">
+                <div class="tab active">
+                    <img class="tab-icon" src="https://www.google.com/favicon.ico" alt="Google">
+                    <span class="tab-title">Google</span>
+                    <span class="close-tab">×</span>
+                </div>
+            </div>
+            <button class="new-tab-button">
+                <i class="fas fa-plus"></i>
+            </button>
+        </div>
+        <div class="address-bar">
+            <div class="navigation-buttons">
+                <button class="nav-button back-button disabled">
+                    <i class="fas fa-arrow-left"></i>
+                </button>
+                <button class="nav-button forward-button disabled">
+                    <i class="fas fa-arrow-right"></i>
+                </button>
+                <button class="nav-button refresh-button">
+                    <i class="fas fa-redo-alt"></i>
+                </button>
+                <button class="nav-button home-button">
+                    <i class="fas fa-home"></i>
+                </button>
+            </div>
+            <div class="url-container">
+                <i class="fas fa-lock url-icon"></i>
+                <input type="text" class="url-input" value="https://www.google.com/">
+            </div>
+            <div class="browser-actions">
+                <button class="action-button">
+                    <i class="fas fa-star"></i>
+                </button>
+                <button class="action-button">
+                    <i class="fas fa-ellipsis-v"></i>
+                </button>
+            </div>
+        </div>
+        <div class="browser-content">
+            <iframe src="https://www.google.com/" class="content-frame active" id="frame-1"></iframe>
+        </div>
+    </div>
+    
+    <!-- AI Floatbox Toggle Button -->
+    <button class="ai-toggle-button">
+        <i class="fas fa-triangle"></i>
+    </button>
+    
+    <!-- AI Floatbox -->
+    <div class="ai-floatbox">
+        <div class="ai-floatbox-header">
+            <div class="ai-floatbox-title">AI Assistant</div>
+            <button class="ai-floatbox-close">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="ai-floatbox-content">
+            <div class="ai-message">
+                Hello! I can help you analyze and edit webpages. Tap the "Take Screenshot" button to start.
+            </div>
+            
+            <div class="ai-tools">
+                <button class="ai-tool" id="take-screenshot">
+                    <i class="fas fa-camera"></i>
+                    Take Screenshot
+                </button>
+                <button class="ai-tool" id="analyze-page">
+                    <i class="fas fa-search"></i>
+                    Analyze Page
+                </button>
+                <button class="ai-tool" id="generate-content">
+                    <i class="fas fa-magic"></i>
+                    Generate Content
+                </button>
+                <button class="ai-tool" id="enhance-images">
+                    <i class="fas fa-image"></i>
+                    Enhance Images
+                </button>
+            </div>
+            
+            <div class="screenshot-preview" style="display: none;">
+                <img src="" alt="Page Screenshot" id="screenshot-img">
+                
+                <div class="ai-editing-tools">
+                    <button class="editing-tool" id="edit-text">
+                        <i class="fas fa-font"></i>
+                        Edit Text
+                    </button>
+                    <button class="editing-tool" id="replace-images">
+                        <i class="fas fa-exchange-alt"></i>
+                        Replace Images
+                    </button>
+                    <button class="editing-tool" id="change-colors">
+                        <i class="fas fa-palette"></i>
+                        Change Colors
+                    </button>
+                    <button class="editing-tool" id="remove-elements">
+                        <i class="fas fa-trash"></i>
+                        Remove Elements
+                    </button>
+                    <button class="editing-tool" id="add-elements">
+                        <i class="fas fa-plus-circle"></i>
+                        Add Elements
+                    </button>
+                </div>
+            </div>
+            
+            <div class="ai-responses">
+                <!-- AI responses will be added here -->
+            </div>
+        </div>
+        <div class="ai-floatbox-footer">
+            <div class="ai-input-container">
+                <input type="text" class="ai-input" placeholder="Ask about this page or edit it...">
+            </div>
+            <button class="ai-send-button">
+                <i class="fas fa-paper-plane"></i>
+            </button>
+        </div>
+    </div>
+    
+    <script>
+        // Browser Functionality
+        const urlInput = document.querySelector('.url-input');
+        const refreshButton = document.querySelector('.refresh-button');
+        const backButton = document.querySelector('.back-button');
+        const forwardButton = document.querySelector('.forward-button');
+        const homeButton = document.querySelector('.home-button');
+        const contentFrame = document.querySelector('.content-frame');
+        const newTabButton = document.querySelector('.new-tab-button');
+        const tabsContainer = document.querySelector('.tabs-container');
+        
+        // AI Floatbox Functionality
+        const aiToggleButton = document.querySelector('.ai-toggle-button');
+        const aiFloatbox = document.querySelector('.ai-floatbox');
+        const aiFloatboxClose = document.querySelector('.ai-floatbox-close');
+        const takeScreenshotButton = document.getElementById('take-screenshot');
+        const screenshotPreview = document.querySelector('.screenshot-preview');
+        const screenshotImg = document.getElementById('screenshot-img');
+        const aiResponses = document.querySelector('.ai-responses');
+        const aiInput = document.querySelector('.ai-input');
+        const aiSendButton = document.querySelector('.ai-send-button');
+        const analyzePageButton = document.getElementById('analyze-page');
+        const generateContentButton = document.getElementById('generate-content');
+        const enhanceImagesButton = document.getElementById('enhance-images');
+        const editingTools = document.querySelectorAll('.editing-tool');
+        
+        let activeTabId = 'frame-1';
+        let tabsCount = 1;
+        
+        // Browser Navigation Functions
+        urlInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                loadUrl(urlInput.value);
+            }
+        });
+        
+        function loadUrl(url) {
+            if (!url.startsWith('http')) {
+                url = 'https://' + url;
+            }
+            
+            contentFrame.src = url;
+            urlInput.value = url;
+            
+            // Update active tab title and icon
+            const activeTab = document.querySelector('.tab.active');
+            activeTab.querySelector('.tab-title').textContent = new URL(url).hostname;
+            
+            // Enable back button
+            backButton.classList.remove('disabled');
+        }
+        
+        refreshButton.addEventListener('click', () => {
+            contentFrame.src = contentFrame.src;
+        });
+        
+        backButton.addEventListener('click', () => {
+            if (!backButton.classList.contains('disabled')) {
+                window.history.back();
+                forwardButton.classList.remove('disabled');
+            }
+        });
+        
+        forwardButton.addEventListener('click', () => {
+            if (!forwardButton.classList.contains('disabled')) {
+                window.history.forward();
+            }
+        });
+        
+        homeButton.addEventListener('click', () => {
+            loadUrl('https://www.google.com/');
+        });
+        
+        // Tab Functions
+        newTabButton.addEventListener('click', () => {
+            // Create new tab
+            tabsCount++;
+            const newTabId = `frame-${tabsCount}`;
+            
+            const newTab = document.createElement('div');
+            newTab.className = 'tab';
+            newTab.innerHTML = `
+                <img class="tab-icon" src="https://www.google.com/favicon.ico" alt="Google">
+                <span class="tab-title">New Tab</span>
+                <span class="close-tab">×</span>
+            `;
+            
+            // Create new content frame
+            const newFrame = document.createElement('iframe');
+            newFrame.className = 'content-frame';
+            newFrame.id = newTabId;
+            newFrame.src = 'https://www.google.com/';
+            
+            // Add tab click event
+            newTab.addEventListener('click', (e) => {
+                if (!e.target.classList.contains('close-tab')) {
+                    switchTab(newTabId);
+                }
+            });
+            
+            // Add close tab event
+            newTab.querySelector('.close-tab').addEventListener('click', () => {
+                closeTab(newTabId);
+            });
+            
+            // Add to DOM
+            tabsContainer.appendChild(newTab);
+            document.querySelector('.browser-content').appendChild(newFrame);
+            
+            // Switch to the new tab
+            switchTab(newTabId);
+        });
+        
+        function switchTab(tabId) {
+            // Hide all tabs and frames
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.content-frame').forEach(frame => frame.classList.remove('active'));
+            
+            // Show active tab and frame
+            document.querySelector(`#${tabId}`).classList.add('active');
+            
+            // Find the index of the active tab
+            const frames = document.querySelectorAll('.content-frame');
+            let activeIndex = 0;
+            
+            frames.forEach((frame, index) => {
+                if (frame.id === tabId) {
+                    activeIndex = index;
+                }
+            });
+            
+            document.querySelectorAll('.tab')[activeIndex].classList.add('active');
+            
+            // Update URL in address bar
+            const activeFrame = document.querySelector(`#${tabId}`);
+            urlInput.value = activeFrame.src;
+            
+            activeTabId = tabId;
+        }
+        
+        function closeTab(tabId) {
+            // Find the index of the tab to close
+            const frames = document.querySelectorAll('.content-frame');
+            let closeIndex = 0;
+            
+            frames.forEach((frame, index) => {
+                if (frame.id === tabId) {
+                    closeIndex = index;
+                }
+            });
+            
+            // Remove tab and frame
+            document.querySelectorAll('.tab')[closeIndex].remove();
+            document.querySelector(`#${tabId}`).remove();
+            
+            // If we closed the active tab, switch to the first available tab
+            if (tabId === activeTabId) {
+                const remainingFrames = document.querySelectorAll('.content-frame');
+                if (remainingFrames.length > 0) {
+                    switchTab(remainingFrames[0].id);
+                }
+            }
+        }
+        
+        // AI Floatbox Functions
+        aiToggleButton.addEventListener('click', () => {
+            aiFloatbox.classList.toggle('active');
+        });
+        
+        aiFloatboxClose.addEventListener('click', () => {
+            aiFloatbox.classList.remove('active');
+        });
+        
+        takeScreenshotButton.addEventListener('click', () => {
+            // Simulate taking a screenshot
+            simulateTakeScreenshot();
+        });
+        
+        function simulateTakeScreenshot() {
+            // Show loading state
+            addAiResponse('Taking screenshot of the current page...');
+            
+            // Simulate delay
+            setTimeout(() => {
+                // In a real implementation, this would capture the actual page
+                // For demo purposes, we're using a placeholder
+                screenshotImg.src = 'https://via.placeholder.com/328x200?text=Page+Screenshot';
+                screenshotPreview.style.display = 'block';
+                
+                addAiResponse('Screenshot captured! You can now edit this page using the tools below.');
+            }, 1000);
+        }
+        
+        // AI Analysis and Editing Functions
+        analyzePageButton.addEventListener('click', () => {
+            addAiResponse('Analyzing page content and structure...');
+            
+            // Simulate analysis delay
+            setTimeout(() => {
+                addAiResponse('Page Analysis Complete! This page contains:<br>- 5 images<br>- 3 navigation sections<br>- 12 text blocks<br>- 2 forms<br><br>What would you like to modify?');
+            }, 1500);
+        });
+        
+        generateContentButton.addEventListener('click', () => {
+            addAiResponse('What kind of content would you like me to generate for this page?');
+        });
+        
+        enhanceImagesButton.addEventListener('click', () => {
+            addAiResponse('Looking for images to enhance...');
+            
+            // Simulate enhancement delay
+            setTimeout(() => {
+                addAiResponse('Found 5 images that can be enhanced. Would you like me to:<br>1. Increase resolution<br>2. Adjust colors<br>3. Add artistic filters<br>4. Replace with AI-generated alternatives');
+            }, 1200);
+        });
+        
+        // Add click events for editing tools
+        editingTools.forEach(tool => {
+            tool.addEventListener('click', (e) => {
+                const toolId = e.currentTarget.id;
+                
+                switch (toolId) {
+                    case 'edit-text':
+                        addAiResponse('Select text you want to edit or describe which text to modify.');
+                        break;
+                    case 'replace-images':
+                        addAiResponse('Select an image to replace or describe which image you want to change.');
+                        break;
+                    case 'change-colors':
+                        addAiResponse('What colors would you like to change? I can modify:<br>- Background colors<br>- Text colors<br>- Button colors<br>- Border colors');
+                        break;
+                    case 'remove-elements':
+                        addAiResponse('Click on elements you want to remove or describe which elements to delete.');
+                        break;
+                    case 'add-elements':
+                        addAiResponse('What would you like to add to the page? I can create:<br>- Buttons<br>- Text blocks<br>- Images<br>- Forms<br>- Dividers');
+                        break;
+                }
+            });
+        });
+        
+        // AI Input Handling
+        aiSendButton.addEventListener('click', () => {
+            sendAiMessage();
+        });
+        
+        aiInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                sendAiMessage();
+            }
+        });
+        
+        function sendAiMessage() {
+            const message = aiInput.value.trim();
+            
+            if (message) {
+                // Add user message
+                addUserMessage(message);
+                
+                // Process message
+                processAiMessage(message);
+                
+                // Clear input
+                aiInput.value = '';
+            }
+        }
+        
+        function addUserMessage(message) {
+            const messageElement = document.createElement('div');
+            messageElement.className = 'ai-response-item';
+            messageElement.innerHTML = `
+                <div class="ai-response-icon">
+                    <i class="fas fa-user"></i>
+                </div>
+                <div class="ai-response-text">
+                    ${message}
+                </div>
+            `;
+            
+            aiResponses.appendChild(messageElement);
+            aiResponses.scrollTop = aiResponses.scrollHeight;
+        }
+        
+        function addAiResponse(message) {
+            const messageElement = document.createElement('div');
+            messageElement.className = 'ai-response-item';
+            messageElement.innerHTML = `
+                <div class="ai-response-icon">
+                    <i class="fas fa-robot"></i>
+                </div>
+                <div class="ai-response-text">
+                    ${message}
+                </div>
+            `;
+            
+            aiResponses.appendChild(messageElement);
+            aiResponses.scrollTop = aiResponses.scrollHeight;
+        }
+        
+        function processAiMessage(message) {
+            // Simulate AI processing
+            addAiResponse('Processing your request...');
+            
+            // Simple keyword-based responses for demo
+            setTimeout(() => {
+                if (message.toLowerCase().includes('edit') && message.toLowerCase().includes('text')) {
+                    addAiResponse('I can help edit text on this page. Please specify which text you want to change and what the new text should be.');
+                } else if (message.toLowerCase().includes('replace') && message.toLowerCase().includes('image')) {
+                    addAiResponse('I can replace images on this page. Would you like me to:<br>1. Use an image from the web<br>2. Generate a new image<br>3. Modify an existing image');
+                } else if (message.toLowerCase().includes('color') || message.toLowerCase().includes('style')) {
+                    addAiResponse('I can change the visual style of this page. What specific colors or styles would you like to modify?');
+                } else if (message.toLowerCase().includes('remove') || message.toLowerCase().includes('delete')) {
+                    addAiResponse('I can remove elements from this page. Please specify which elements you want to remove.');
+                } else if (message.toLowerCase().includes('add') || message.toLowerCase().includes('insert')) {
+                    addAiResponse('I can add new elements to this page. What type of content would you like to add and where?');
+                } else if (message.toLowerCase().includes('search') || message.toLowerCase().includes('find')) {
+                    addAiResponse('I can help search for content on this page or the web. What specific information are you looking for?');
+                } else {
+                    addAiResponse('I can analyze and edit this webpage for you. To get started, you can ask me to:<br>- Edit specific text<br>- Replace images<br>- Change colors and styles<br>- Remove unwanted elements<br>- Add new content<br>- Search for information');
+                }
+            }, 1000);
+        }
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            // Add initial AI greeting after a short delay
+            setTimeout(() => {
+                addAiResponse('Hello! I can help you enhance and modify this webpage. Click the "Take Screenshot" button to begin.');
+            }, 500);
+        });
+    </script>
+</body>
+</html>
